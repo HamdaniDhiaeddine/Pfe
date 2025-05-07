@@ -6,17 +6,29 @@ import '../services/auth_service.dart';
 class AuthProvider with ChangeNotifier {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   String? _token;
+  String? _role;
   bool _isAuthenticated = false;
 
   String? get token => _token;
+  String? get role => _role;
   bool get isAuthenticated => _isAuthenticated;
 
-  /// Load Token from Secure Storage
+  /// Load Token and Role from Secure Storage
   Future<void> loadToken() async {
     final savedToken = await AuthService.getToken();
     if (savedToken != null && !JwtDecoder.isExpired(savedToken)) {
       _token = savedToken;
       _isAuthenticated = true;
+
+      // Decode the token to extract the role
+      final decodedToken = JwtDecoder.decode(savedToken);
+      _role = decodedToken['role']; // Ensure your backend includes 'role' in the token payload
+
+      // Automatically log out when the token expires
+      final expirationDate = JwtDecoder.getExpirationDate(savedToken);
+      Future.delayed(expirationDate.difference(DateTime.now()), () {
+        logout(); // Log out the user
+      });
     } else {
       logout(); // Clear invalid/expired token
     }
@@ -33,6 +45,16 @@ class AuthProvider with ChangeNotifier {
 
         await AuthService.saveToken(token); // Save token securely
 
+        // Decode the token to extract the role
+        final decodedToken = JwtDecoder.decode(token);
+        _role = decodedToken['role'];
+
+        // Automatically log out when the token expires
+        final expirationDate = JwtDecoder.getExpirationDate(token);
+        Future.delayed(expirationDate.difference(DateTime.now()), () {
+          logout();
+        });
+
         notifyListeners();
         return true;
       }
@@ -42,19 +64,10 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  /// Register
-  Future<bool> register(Map<String, dynamic> registerData) async {
-    try {
-      final success = await AuthService.register(registerData);
-      return success;
-    } catch (e) {
-      return false;
-    }
-  }
-
   /// Logout
   void logout() async {
     _token = null;
+    _role = null;
     _isAuthenticated = false;
 
     await AuthService.removeToken(); // Remove token securely

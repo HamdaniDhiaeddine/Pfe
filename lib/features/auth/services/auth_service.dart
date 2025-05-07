@@ -10,10 +10,10 @@ class AuthService {
     try {
       final response = await _dio.post(
         '/login',
-        data: {'username': username, 'password': password}, // Based on backend AuthController
+        data: {'username': username, 'password': password},
       );
       if (response.statusCode == 200) {
-        return response.data['token']; // Assuming the back-end sends a JWT token
+        return response.data['token']; // Assuming the backend sends a JWT token
       }
     } catch (e) {
       print('Login failed: $e');
@@ -21,28 +21,14 @@ class AuthService {
     return null;
   }
 
-  /// Register
-  static Future<bool> register(Map<String, dynamic> registerData) async {
-    try {
-      final response = await _dio.post(
-        '/register',
-        data: registerData, // Based on backend AuthController
-      );
-      return response.statusCode == 201; // Success if user is created
-    } catch (e) {
-      print('Registration failed: $e');
-      return false;
-    }
+  /// Save Token to Secure Storage
+  static Future<void> saveToken(String token) async {
+    await _secureStorage.write(key: 'token', value: token);
   }
 
   /// Get Token from Secure Storage
   static Future<String?> getToken() async {
     return await _secureStorage.read(key: 'token');
-  }
-
-  /// Save Token to Secure Storage
-  static Future<void> saveToken(String token) async {
-    await _secureStorage.write(key: 'token', value: token);
   }
 
   /// Remove Token from Secure Storage

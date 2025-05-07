@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,6 +17,28 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _loading = false;
   bool _rememberMe = false;
+
+  Future<void> _handleLogin() async {
+  if (!_formKey.currentState!.validate()) return;
+
+  setState(() => _loading = true);
+
+  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+  final success = await authProvider.login(
+    _emailController.text.trim(),
+    _passwordController.text.trim(),
+  );
+
+  setState(() => _loading = false);
+
+  if (success) {
+    context.go('/dashboard'); // Use GoRouter for navigation
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Invalid credentials. Please try again.')),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -108,13 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: _loading
-                                  ? null
-                                  : () {
-                                      if (_formKey.currentState!.validate()) {
-                                        // TODO: Implement login logic
-                                      }
-                                    },
+                              onPressed: _loading ? null : _handleLogin,
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                               ),
