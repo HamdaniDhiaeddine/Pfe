@@ -74,23 +74,16 @@
 //   ],
 // );
 
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:humaniq/features/auth/providers/auth_provider.dart';
-import 'package:humaniq/features/auth/screens/login_screen.dart';
-import 'package:humaniq/features/employee/screens/dashboard_screen.dart';
-import 'package:provider/provider.dart';
+import '../../features/auth/screens/login_screen.dart';
 
-import '../../features/auth/services/auth_middleware.dart';
+import '../../features/employee/screens/dashboard_screen.dart';
+import '../../features/employee/screens/leave_request_screen.dart';
 
+import '../../features/employee/screens/profile_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/login',
-  redirect: (context, state) {
-    // Access AuthProvider and pass it to checkAuth
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    return checkAuth(authProvider, state);
-  },
   routes: [
     GoRoute(
       path: '/login',
@@ -99,6 +92,17 @@ final router = GoRouter(
     GoRoute(
       path: '/dashboard',
       builder: (context, state) => const DashboardScreen(),
+      routes: [
+        GoRoute(
+          path: 'profile',
+          builder: (context, state) => const ProfileScreen(),
+        ),
+        GoRoute(
+          path: 'leave-requests',
+          builder: (context, state) => const LeaveRequestsScreen(),
+        ),
+        // Add more routes here as we implement more features
+      ],
     ),
   ],
 );

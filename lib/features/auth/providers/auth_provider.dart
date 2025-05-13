@@ -1,77 +1,53 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../../../data/models/user.dart';
 
 class AuthProvider with ChangeNotifier {
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
-  String? _token;
-  String? _role;
-  bool _isAuthenticated = false;
+  final AuthService _authService = AuthService();
+  User? _user;
+  bool _loading = false;
 
-  String? get token => _token;
-  String? get role => _role;
-  bool get isAuthenticated => _isAuthenticated;
+  User? get user => _user;
+  bool get loading => _loading;
+  bool get isAuthenticated => _user != null;
 
-  /// Load Token and Role from Secure Storage
-  Future<void> loadToken() async {
-    final savedToken = await AuthService.getToken();
-    if (savedToken != null && !JwtDecoder.isExpired(savedToken)) {
-      _token = savedToken;
-      _isAuthenticated = true;
-
-      // Decode the token to extract the role
-      final decodedToken = JwtDecoder.decode(savedToken);
-      _role = decodedToken['role']; // Ensure your backend includes 'role' in the token payload
-
-      // Automatically log out when the token expires
-      final expirationDate = JwtDecoder.getExpirationDate(savedToken);
-      Future.delayed(expirationDate.difference(DateTime.now()), () {
-        logout(); // Log out the user
-      });
-    } else {
-      logout(); // Clear invalid/expired token
-    }
+  Future<void> login(String username, String password) async {
+    _loading = true;
     notifyListeners();
-  }
 
-  /// Login
-  Future<bool> login(String username, String password) async {
     try {
-      final token = await AuthService.login(username, password);
-      if (token != null && !JwtDecoder.isExpired(token)) {
-        _token = token;
-        _isAuthenticated = true;
-
-        await AuthService.saveToken(token); // Save token securely
-
-        // Decode the token to extract the role
-        final decodedToken = JwtDecoder.decode(token);
-        _role = decodedToken['role'];
-
-        // Automatically log out when the token expires
-        final expirationDate = JwtDecoder.getExpirationDate(token);
-        Future.delayed(expirationDate.difference(DateTime.now()), () {
-          logout();
-        });
-
-        notifyListeners();
-        return true;
-      }
-      return false;
-    } catch (e) {
-      return false;
+      final authResponse = await _authService.login(username, password);
+      _user = authResponse.user;
+    } finally {
+      _loading = false;
+      notifyListeners();
     }
   }
 
-  /// Logout
-  void logout() async {
-    _token = null;
-    _role = null;
-    _isAuthenticated = false;
-
-    await AuthService.removeToken(); // Remove token securely
-
+  Future<void> logout() async {
+    _loading = true;
     notifyListeners();
+
+    try {
+      await _authService.logout();
+      _user = null;
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadUser() async {
+    if (await _authService.isAuthenticated()) {
+      _loading = true;
+      notifyListeners();
+
+      try {
+        _user = await _authService.getCurrentUser();
+      } finally {
+        _loading = false;
+        notifyListeners();
+      }
+    }
   }
 }

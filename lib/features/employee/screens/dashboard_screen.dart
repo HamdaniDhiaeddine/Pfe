@@ -1,50 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:humaniq/shared/widgets/dashboard_drawer.dart';
+import 'package:provider/provider.dart';
+import '../../../shared/widgets/dashboard_drawer.dart';
+import '../../auth/providers/auth_provider.dart';
 
-class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({Key? key}) : super(key: key);
 
   @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().user;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
-          // Notifications Icon
           IconButton(
-            icon: const Badge(
-              label: Text('3'),
-              child: Icon(Icons.notifications),
-            ),
-            onPressed: () => context.go('/dashboard/notifications'),
-              // TODO: Show notifications
-            
+            icon: const Icon(Icons.notifications),
+            onPressed: () {
+              // TODO: Implement notifications
+            },
           ),
-          // Profile Menu
-          PopupMenuButton(
+          IconButton(
             icon: const CircleAvatar(
               backgroundImage: AssetImage('assets/img/anonyme.jpg'),
+              radius: 15,
             ),
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                child: const Text('Profile'),
-                value: 'profile',
-                onTap: () => context.go('/dashboard/profile'),
-              ),
-              PopupMenuItem(
-                child: const Text('Settings'),
-                value: 'settings',
-                onTap: () => context.go('/dashboard/settings'),
-              ),
-              const PopupMenuItem(
-                child: Text('Logout'),
-                value: 'logout',
-                // TODO: Implement logout
-              ),
-            ],
-            onSelected: (value) {
-              // TODO: Handle menu selection
+            onPressed: () {
+              context.go('/dashboard/profile');
             },
           ),
         ],
@@ -53,99 +41,82 @@ class DashboardScreen extends StatelessWidget {
       body: GridView.count(
         padding: const EdgeInsets.all(16),
         crossAxisCount: 2,
-        crossAxisSpacing: 16,
         mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
         children: [
-          _DashboardCard(
-            title: 'Employees',
-            icon: Icons.people,
-            count: '150',
-            color: Colors.blue,
-            onTap: () {
-              // TODO: Navigate to employees
-            },
+          _buildDashboardCard(
+            title: 'My Profile',
+            icon: Icons.person,
+            onTap: () => context.go('/dashboard/profile'),
           ),
-          _DashboardCard(
-            title: 'Departments',
-            icon: Icons.business,
-            count: '8',
-            color: Colors.green,
-            onTap: () {
-              // TODO: Navigate to departments
-            },
+          _buildDashboardCard(
+            title: 'Leave Requests',
+            icon: Icons.beach_access,
+            onTap: () => context.go('/dashboard/leave-requests'),
           ),
-          _DashboardCard(
+          _buildDashboardCard(
             title: 'Contracts',
             icon: Icons.description,
-            count: '120',
-            color: Colors.orange,
-            onTap: () {
-              // TODO: Navigate to contracts
-            },
+            onTap: () => context.go('/dashboard/contracts'),
           ),
-          _DashboardCard(
-            title: 'Events',
-            icon: Icons.event,
-            count: '5',
-            color: Colors.purple,
-            onTap: () {
-              // TODO: Navigate to events
-            },
+          _buildDashboardCard(
+            title: 'Attendance',
+            icon: Icons.access_time,
+            onTap: () => context.go('/dashboard/attendance'),
+          ),
+          if (user?.roles.contains('ROLE_ADMIN') ?? false) ...[
+            _buildDashboardCard(
+              title: 'Departments',
+              icon: Icons.business,
+              onTap: () => context.go('/dashboard/departments'),
+            ),
+            _buildDashboardCard(
+              title: 'Employees',
+              icon: Icons.people,
+              onTap: () => context.go('/dashboard/employees'),
+            ),
+          ],
+          _buildDashboardCard(
+            title: 'Payslips',
+            icon: Icons.receipt,
+            onTap: () => context.go('/dashboard/payslips'),
+          ),
+          _buildDashboardCard(
+            title: 'Settings',
+            icon: Icons.settings,
+            onTap: () => context.go('/dashboard/settings'),
           ),
         ],
       ),
     );
   }
-}
 
-class _DashboardCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final String count;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _DashboardCard({
-    required this.title,
-    required this.icon,
-    required this.count,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildDashboardCard({
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     return Card(
-      elevation: 4,
+      elevation: 2,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 48,
-                color: color,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 48,
+              color: Theme.of(context).primaryColor,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 8),
-              Text(
-                count,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
