@@ -1,8 +1,6 @@
-import '../user.dart';
-
 class AuthenticationResponse {
   final String token;
-  final User user;
+  final Map<String, dynamic> user;
 
   AuthenticationResponse({
     required this.token,
@@ -11,8 +9,8 @@ class AuthenticationResponse {
 
   factory AuthenticationResponse.fromJson(Map<String, dynamic> json) {
     return AuthenticationResponse(
-      token: json['token'],
-      user: User.fromJson(json['user']),
+      token: json['token'] as String,
+      user: json['user'] as Map<String, dynamic>,
     );
   }
 }

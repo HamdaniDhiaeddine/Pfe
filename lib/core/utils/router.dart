@@ -93,10 +93,10 @@ final router = GoRouter(
       path: '/dashboard',
       builder: (context, state) => const DashboardScreen(),
       routes: [
-        GoRoute(
-          path: 'profile',
-          builder: (context, state) => const ProfileScreen(),
-        ),
+        // GoRoute(
+        //   path: 'profile',
+        //   builder: (context, state) => const ProfileScreen(),
+        // ),
         GoRoute(
           path: 'leave-requests',
           builder: (context, state) => const LeaveRequestsScreen(),

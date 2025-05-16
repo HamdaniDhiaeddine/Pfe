@@ -1,29 +1,35 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/services/api_service.dart';
-import '../../../data/models/auth/authentication_request.dart';
-import '../../../data/models/auth/authentication_response.dart';
 import '../../../data/models/user.dart';
 
 class AuthService {
   final ApiService _api = ApiService();
   final _storage = const FlutterSecureStorage();
 
-  Future<AuthenticationResponse> login(String username, String password) async {
+  Future<User> login(String username, String password) async {
     try {
-      final request = AuthenticationRequest(
-        username: username,
-        password: password,
-      );
+      debugPrint('Attempting login for user: $username');
+      
+      final loginResponse = await _api.post('/auth/login', {
+        'username': username,
+        'password': password,
+      });
 
-      final response = await _api.post('/auth/login', request.toJson());
-      final authResponse = AuthenticationResponse.fromJson(response.data);
-      
+      debugPrint('Login response: ${loginResponse.data}');
+
       // Store the token
-      await _storage.write(key: 'jwt_token', value: authResponse.token);
-      
-      return authResponse;
+      final token = loginResponse.data['token'] as String;
+      await _storage.write(key: 'jwt_token', value: token);
+
+      // After successful login and token storage, fetch user profile
+      final userResponse = await _api.get('/users/profile');
+      debugPrint('User profile response: ${userResponse.data}');
+
+      return User.fromJson(userResponse.data);
     } catch (e) {
-      rethrow;
+      debugPrint('Login error: $e');
+      throw 'Invalid username or password';
     }
   }
 
@@ -31,7 +37,8 @@ class AuthService {
     try {
       await _storage.delete(key: 'jwt_token');
     } catch (e) {
-      rethrow;
+      debugPrint('Logout error: $e');
+      throw 'Failed to logout';
     }
   }
 
@@ -42,10 +49,11 @@ class AuthService {
 
   Future<User> getCurrentUser() async {
     try {
-      final response = await _api.get('/users/me');
+      final response = await _api.get('/users/profile');
       return User.fromJson(response.data);
     } catch (e) {
-      rethrow;
+      debugPrint('Get current user error: $e');
+      throw 'Failed to fetch user profile';
     }
   }
 }
