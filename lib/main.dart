@@ -1,54 +1,67 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'features/auth/providers/auth_provider.dart';
-import 'features/employee/providers/contract_provider.dart';
-import 'features/employee/providers/department_provider.dart';
-import 'features/employee/providers/directory_provider.dart';
-import 'features/employee/providers/event_provider.dart';
-import 'features/employee/providers/leave_provider.dart';
-import 'core/utils/router.dart';
+import 'features/auth/screens/login_screen.dart';
+//import 'features/dashboard/screens/dashboard_screen.dart';
+import 'features/admin/screens/admin_dashboard_screen.dart';
+// import 'features/hr/screens/hr_dashboard_screen.dart';
+// import 'features/manager/screens/manager_dashboard_screen.dart';
+// import 'features/employee/screens/employee_dashboard_screen.dart';
 
 void main() {
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          create: (_) => AuthProvider()..loadUser(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => DepartmentProvider(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => DirectoryProvider(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ContractProvider(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => EventProvider(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => LeaveProvider(),
-        ),
-      ],
-      child: const MyApp(),
-    ),
-  );
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'HumanIQ App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        // Add other providers here
+      ],
+      child: MaterialApp(
+        title: 'Your App Name',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          useMaterial3: true,
+        ),
+        initialRoute: '/login',
+        onGenerateRoute: generateRoute,
       ),
-      routerConfig: router,
     );
+  }
+}
+
+Route<dynamic> generateRoute(RouteSettings settings) {
+  switch (settings.name) {
+    case '/login':
+      return MaterialPageRoute(builder: (_) => const LoginScreen());
+    
+    // case '/dashboard':
+    //   return MaterialPageRoute(builder: (_) => const DashboardScreen());
+    
+    case '/admin/dashboard':
+      return MaterialPageRoute(builder: (_) => const AdminDashboardScreen());
+    
+    // case '/hr/dashboard':
+    //   return MaterialPageRoute(builder: (_) => const HRDashboardScreen());
+    
+    // case '/manager/dashboard':
+    //   return MaterialPageRoute(builder: (_) => const ManagerDashboardScreen());
+    
+    // case '/employee/dashboard':
+    //   return MaterialPageRoute(builder: (_) => const EmployeeDashboardScreen());
+    
+    default:
+      return MaterialPageRoute(
+        builder: (_) => Scaffold(
+          body: Center(
+            child: Text('No route defined for ${settings.name}'),
+          ),
+        ),
+      );
   }
 }

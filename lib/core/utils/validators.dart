@@ -1,37 +1,34 @@
 typedef Validator = String? Function(String?);
 
 class Validators {
-  static Validator required([String? message]) {
-    return (value) {
+  static String? Function(String?) required(String message) {
+    return (String? value) {
       if (value == null || value.isEmpty) {
-        return message ?? 'This field is required';
+        return message;
       }
       return null;
     };
   }
 
-  static Validator email([String? message]) {
-    return (value) {
+  static String? Function(String?) email(String message) {
+    return (String? value) {
       if (value == null || value.isEmpty) {
-        return message ?? 'Email is required';
+        return 'Email is required';
       }
-
-      final emailRegex = RegExp(
-        r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+',
-      );
-
-      if (!emailRegex.hasMatch(value)) {
-        return message ?? 'Please enter a valid email';
+      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+        return message;
       }
-
       return null;
     };
   }
 
-  static Validator minLength(int length, [String? message]) {
-    return (value) {
-      if (value == null || value.length < length) {
-        return message ?? 'Must be at least $length characters';
+  static String? Function(String?) password(String message) {
+    return (String? value) {
+      if (value == null || value.isEmpty) {
+        return 'Password is required';
+      }
+      if (value.length < 6) {
+        return message;
       }
       return null;
     };

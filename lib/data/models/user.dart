@@ -7,7 +7,7 @@ class User {
   final String email;
   final List<String> roles;
   final String? department;
-  final DateTime createdAt;
+  final DateTime? createdAt;
   final bool enabled;
   final String? phoneNumber;
   final String? address;
@@ -16,7 +16,18 @@ class User {
   final DateTime? birthDate;
   final String? nationalId;
   final DateTime? hireDate;
-  final String? imageUrl;
+  final String? profileImagePath;
+  final bool active;
+  final int leaveBalance;
+  final bool accountVerified;
+  final bool isDisabled;
+  final String? telNumber;
+  final bool loginDisabled;
+  final bool accountNonLocked;
+  final bool credentialsNonExpired;
+  final bool accountNonExpired;
+  final double? salary;
+  final List<Map<String, dynamic>> authorities;
   final Map<String, dynamic>? additionalInfo;
 
   User({
@@ -26,7 +37,7 @@ class User {
     required this.email,
     required this.roles,
     this.department,
-    required this.createdAt,
+    this.createdAt,
     required this.enabled,
     this.phoneNumber,
     this.address,
@@ -35,14 +46,27 @@ class User {
     this.birthDate,
     this.nationalId,
     this.hireDate,
-    this.imageUrl,
+    this.profileImagePath,
+    required this.active,
+    required this.leaveBalance,
+    required this.accountVerified,
+    required this.isDisabled,
+    this.telNumber,
+    required this.loginDisabled,
+    required this.accountNonLocked,
+    required this.credentialsNonExpired,
+    required this.accountNonExpired,
+    this.salary,
+    required this.authorities,
     this.additionalInfo,
   });
 
   // Add getters for convenience
   bool get isAdmin => roles.contains('ROLE_ADMIN');
+  bool get isSuperAdmin => roles.contains('ROLE_SUPERADMIN');
   bool get isEmployee => roles.contains('ROLE_EMPLOYEE');
   bool get isManager => roles.contains('ROLE_MANAGER');
+  bool get isHR => roles.contains('ROLE_RH');
 
   factory User.fromJson(Map<String, dynamic> json) {
     debugPrint('Parsing user from JSON: $json');
@@ -50,20 +74,39 @@ class User {
     return User(
       id: json['id'] as int,
       username: json['username'] as String,
-      fullName: json['fullName'] as String,
+      fullName: json['fullname'] as String, // Note: backend uses 'fullname' not 'fullName'
       email: json['email'] as String,
-      roles: (json['roles'] as List<dynamic>).map((e) => e.toString()).toList(),
+      roles: (json['roles'] as List<dynamic>)
+          .map((role) => (role['name'] as String))
+          .toList(),
       department: json['department'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: null, // Add if available in your response
       enabled: json['enabled'] as bool? ?? true,
-      phoneNumber: json['phoneNumber'] as String?,
+      phoneNumber: json['telNumber'] as String?, // Note: backend uses 'telNumber'
       address: json['address'] as String?,
       position: json['position'] as String?,
       gender: json['gender'] as String?,
-      birthDate: json['birthDate'] != null ? DateTime.parse(json['birthDate'] as String) : null,
-      nationalId: json['nationalId'] as String?,
-      hireDate: json['hireDate'] != null ? DateTime.parse(json['hireDate'] as String) : null,
-      imageUrl: json['imageUrl'] as String?,
+      birthDate: json['dateOfBirth'] != null 
+          ? DateTime.parse(json['dateOfBirth'] as String) 
+          : null,
+      nationalId: json['nationalID'] as String?, // Note: backend uses 'nationalID'
+      hireDate: json['hireDate'] != null 
+          ? DateTime.parse(json['hireDate'] as String) 
+          : null,
+      profileImagePath: json['profileImagePath'] as String?,
+      active: json['active'] as bool? ?? true,
+      leaveBalance: json['leave_balance'] as int? ?? 0,
+      accountVerified: json['accountVerified'] as bool? ?? false,
+      isDisabled: json['isDisabled'] as bool? ?? false,
+      telNumber: json['telNumber'] as String?,
+      loginDisabled: json['loginDisabled'] as bool? ?? false,
+      accountNonLocked: json['accountNonLocked'] as bool? ?? true,
+      credentialsNonExpired: json['credentialsNonExpired'] as bool? ?? true,
+      accountNonExpired: json['accountNonExpired'] as bool? ?? true,
+      salary: json['salary']?.toDouble(),
+      authorities: (json['authorities'] as List<dynamic>?)
+          ?.map((auth) => auth as Map<String, dynamic>)
+          .toList() ?? [],
       additionalInfo: json['additionalInfo'] as Map<String, dynamic>?,
     );
   }
@@ -72,20 +115,29 @@ class User {
     return {
       'id': id,
       'username': username,
-      'fullName': fullName,
+      'fullname': fullName, // Note: using backend naming
       'email': email,
-      'roles': roles,
+      'roles': roles.map((role) => {'name': role}).toList(),
       'department': department,
-      'createdAt': createdAt.toIso8601String(),
       'enabled': enabled,
-      'phoneNumber': phoneNumber,
+      'telNumber': telNumber, // Note: using backend naming
       'address': address,
       'position': position,
       'gender': gender,
-      'birthDate': birthDate?.toIso8601String(),
-      'nationalId': nationalId,
+      'dateOfBirth': birthDate?.toIso8601String(), // Note: using backend naming
+      'nationalID': nationalId, // Note: using backend naming
       'hireDate': hireDate?.toIso8601String(),
-      'imageUrl': imageUrl,
+      'profileImagePath': profileImagePath,
+      'active': active,
+      'leave_balance': leaveBalance,
+      'accountVerified': accountVerified,
+      'isDisabled': isDisabled,
+      'loginDisabled': loginDisabled,
+      'accountNonLocked': accountNonLocked,
+      'credentialsNonExpired': credentialsNonExpired,
+      'accountNonExpired': accountNonExpired,
+      'salary': salary,
+      'authorities': authorities,
       'additionalInfo': additionalInfo,
     };
   }
@@ -106,7 +158,18 @@ class User {
     DateTime? birthDate,
     String? nationalId,
     DateTime? hireDate,
-    String? imageUrl,
+    String? profileImagePath,
+    bool? active,
+    int? leaveBalance,
+    bool? accountVerified,
+    bool? isDisabled,
+    String? telNumber,
+    bool? loginDisabled,
+    bool? accountNonLocked,
+    bool? credentialsNonExpired,
+    bool? accountNonExpired,
+    double? salary,
+    List<Map<String, dynamic>>? authorities,
     Map<String, dynamic>? additionalInfo,
   }) {
     return User(
@@ -125,8 +188,24 @@ class User {
       birthDate: birthDate ?? this.birthDate,
       nationalId: nationalId ?? this.nationalId,
       hireDate: hireDate ?? this.hireDate,
-      imageUrl: imageUrl ?? this.imageUrl,
+      profileImagePath: profileImagePath ?? this.profileImagePath,
+      active: active ?? this.active,
+      leaveBalance: leaveBalance ?? this.leaveBalance,
+      accountVerified: accountVerified ?? this.accountVerified,
+      isDisabled: isDisabled ?? this.isDisabled,
+      telNumber: telNumber ?? this.telNumber,
+      loginDisabled: loginDisabled ?? this.loginDisabled,
+      accountNonLocked: accountNonLocked ?? this.accountNonLocked,
+      credentialsNonExpired: credentialsNonExpired ?? this.credentialsNonExpired,
+      accountNonExpired: accountNonExpired ?? this.accountNonExpired,
+      salary: salary ?? this.salary,
+      authorities: authorities ?? this.authorities,
       additionalInfo: additionalInfo ?? this.additionalInfo,
     );
+  }
+
+  @override
+  String toString() {
+    return 'User(id: $id, username: $username, fullName: $fullName, roles: $roles)';
   }
 }
