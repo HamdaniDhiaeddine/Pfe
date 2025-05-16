@@ -8,8 +8,8 @@ class ApiConstants {
   static const String refreshToken = '/auth/refresh-token';
   
   // User endpoints
-  static const String currentUser = '/users/me';
-  static const String updateProfile = '/users/profile';
+  static const String currentUser = '/users/profile';
+  //static const String updateProfile = '/users/profile';
   static const String changePassword = '/users/change-password';
   
   // Other endpoints can be added here
