@@ -1,22 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../../../features/auth/providers/auth_provider.dart';
 
 class DashboardDrawer extends StatelessWidget {
   const DashboardDrawer({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = 'Helal Salah'; // You can get this from your auth provider
+    // Get user from AuthProvider
+    final user = context.watch<AuthProvider>().user;
 
     return Drawer(
       child: Column(
         children: [
           UserAccountsDrawerHeader(
-            currentAccountPicture: const CircleAvatar(
-              backgroundImage: AssetImage('assets/img/anonyme.jpg'),
+            currentAccountPicture: CircleAvatar(
+              backgroundImage: user?.profileImagePath != null 
+                ? NetworkImage(user!.profileImagePath!)
+                : const AssetImage('assets/img/anonyme.jpg') as ImageProvider,
             ),
-            accountName: Text(currentUser),
-            accountEmail: const Text('Senior Developer'),
+            accountName: Text(user?.fullName ?? 'Guest User'),
+            accountEmail: Text(user?.email ?? ''),
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor,
             ),
@@ -37,18 +42,21 @@ class DashboardDrawer extends StatelessWidget {
                   title: 'Directory',
                   onTap: () => context.go('/dashboard/directory'),
                 ),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.business,
-                  title: 'Departments',
-                  onTap: () => context.go('/dashboard/departments'),
-                ),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.description,
-                  title: 'Contracts',
-                  onTap: () => context.go('/dashboard/contracts'),
-                ),
+                // Show admin-only menu items
+                if (user?.roles.contains('ROLE_ADMIN') ?? false) ...[
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.business,
+                    title: 'Departments',
+                    onTap: () => context.go('/dashboard/departments'),
+                  ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.description,
+                    title: 'Contracts',
+                    onTap: () => context.go('/dashboard/contracts'),
+                  ),
+                ],
                 _buildDrawerItem(
                   context,
                   icon: Icons.event,
@@ -61,12 +69,14 @@ class DashboardDrawer extends StatelessWidget {
                   title: 'Leave Requests',
                   onTap: () => context.go('/dashboard/leave-requests'),
                 ),
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.payment,
-                  title: 'Payroll',
-                  onTap: () => context.go('/dashboard/payroll'),
-                ),
+                if (user!.roles.contains('ROLE_ADMIN') || 
+                    user!.roles.contains('ROLE_HR') ?? false)
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.payment,
+                    title: 'Payroll',
+                    onTap: () => context.go('/dashboard/payroll'),
+                  ),
                 _buildDrawerItem(
                   context,
                   icon: Icons.chat,
@@ -138,7 +148,9 @@ class DashboardDrawer extends StatelessWidget {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () {
+              Navigator.pop(context, true);
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
             ),
@@ -148,8 +160,9 @@ class DashboardDrawer extends StatelessWidget {
       ),
     );
 
-    if (confirmed == true) {
-      // TODO: Implement logout logic
+    if (confirmed == true && context.mounted) {
+      // Implement logout using AuthProvider
+      await context.read<AuthProvider>().logout(context);
       if (context.mounted) {
         context.go('/login');
       }

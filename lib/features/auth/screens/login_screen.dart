@@ -161,14 +161,14 @@ class _LoginScreenState extends State<LoginScreen> {
         final success = await context.read<AuthProvider>().login(
           _usernameController.text.trim(),
           _passwordController.text,
-          context, // Pass context for navigation
+          context, 
         );
 
         if (!mounted) return;
 
         if (!success) {
           // Error is handled by the provider and shown in the UI
-          _passwordController.clear(); // Clear password on error
+          _passwordController.clear(); 
         }
         // Navigation is handled by the AuthProvider
       } catch (e) {

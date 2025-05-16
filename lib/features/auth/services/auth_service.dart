@@ -11,7 +11,7 @@ class AuthService {
 
   Future<User> login(String username, String password) async {
     try {
-      debugPrint('🔑 Attempting login for user: $username');
+      debugPrint(' Attempting login for user: $username');
       
       final loginResponse = await _api.post(
         ApiConstants.login,
@@ -21,7 +21,7 @@ class AuthService {
         },
       );
 
-      debugPrint('✅ Login response received');
+      debugPrint(' Login response received');
 
       if (loginResponse.data == null || loginResponse.data['token'] == null) {
         throw 'Invalid server response';
@@ -30,7 +30,7 @@ class AuthService {
       // Store token
       final token = loginResponse.data['token'] as String;
       await _storage.write(key: 'jwt_token', value: token);
-      debugPrint('🔐 Token stored successfully');
+      debugPrint(' Token stored successfully');
 
       // Get user profile
       final userResponse = await _api.get(ApiConstants.currentUser);
@@ -41,7 +41,7 @@ class AuthService {
       debugPrint('👤 User profile fetched successfully');
       return User.fromJson(userResponse.data);
     } on DioException catch (e) {
-      debugPrint('❌ API Error: ${e.message}');
+      debugPrint(' API Error: ${e.message}');
       if (e.response?.statusCode == 401) {
         throw 'Invalid username or password';
       } else if (e.response?.statusCode == 403) {
@@ -51,7 +51,7 @@ class AuthService {
       }
       throw 'Failed to login. Please try again';
     } catch (e) {
-      debugPrint('❌ Login error: $e');
+      debugPrint(' Login error: $e');
       rethrow;
     }
   }

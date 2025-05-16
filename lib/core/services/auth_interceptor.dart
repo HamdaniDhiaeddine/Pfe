@@ -21,16 +21,16 @@ class AuthInterceptor extends Interceptor {
 
     try {
       final token = await _storage.read(key: 'jwt_token');
-      debugPrint('Token for request: $token'); // Debug log
+      debugPrint('Token for request: $token'); 
       
       if (token != null) {
         options.headers['Authorization'] = 'Bearer $token';
-        debugPrint('Added token to request headers: ${options.headers}'); // Debug log
+        debugPrint('Added token to request headers: ${options.headers}'); 
       } else {
-        debugPrint('No token found for request to: ${options.path}'); // Debug log
+        debugPrint('No token found for request to: ${options.path}'); 
       }
     } catch (e) {
-      debugPrint('Error reading token: $e'); // Debug log
+      debugPrint('Error reading token: $e'); 
     }
     
     return handler.next(options);
@@ -41,11 +41,11 @@ class AuthInterceptor extends Interceptor {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    debugPrint('Request error: ${err.response?.statusCode}'); // Debug log
-    debugPrint('Request headers: ${err.requestOptions.headers}'); // Debug log
+    debugPrint('Request error: ${err.response?.statusCode}'); 
+    debugPrint('Request headers: ${err.requestOptions.headers}'); 
     
     if (err.response?.statusCode == 403 || err.response?.statusCode == 401) {
-      debugPrint('Authentication error. Clearing token.'); // Debug log
+      debugPrint('Authentication error. Clearing token.'); 
       await _storage.delete(key: 'jwt_token');
     }
     

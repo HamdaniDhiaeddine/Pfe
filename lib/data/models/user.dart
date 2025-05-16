@@ -74,22 +74,22 @@ class User {
     return User(
       id: json['id'] as int,
       username: json['username'] as String,
-      fullName: json['fullname'] as String, // Note: backend uses 'fullname' not 'fullName'
+      fullName: json['fullname'] as String, 
       email: json['email'] as String,
       roles: (json['roles'] as List<dynamic>)
           .map((role) => (role['name'] as String))
           .toList(),
       department: json['department'] as String?,
-      createdAt: null, // Add if available in your response
+      createdAt: null, 
       enabled: json['enabled'] as bool? ?? true,
-      phoneNumber: json['telNumber'] as String?, // Note: backend uses 'telNumber'
+      phoneNumber: json['telNumber'] as String?, 
       address: json['address'] as String?,
       position: json['position'] as String?,
       gender: json['gender'] as String?,
       birthDate: json['dateOfBirth'] != null 
           ? DateTime.parse(json['dateOfBirth'] as String) 
           : null,
-      nationalId: json['nationalID'] as String?, // Note: backend uses 'nationalID'
+      nationalId: json['nationalID'] as String?, 
       hireDate: json['hireDate'] != null 
           ? DateTime.parse(json['hireDate'] as String) 
           : null,
@@ -115,17 +115,17 @@ class User {
     return {
       'id': id,
       'username': username,
-      'fullname': fullName, // Note: using backend naming
+      'fullname': fullName, 
       'email': email,
       'roles': roles.map((role) => {'name': role}).toList(),
       'department': department,
       'enabled': enabled,
-      'telNumber': telNumber, // Note: using backend naming
+      'telNumber': telNumber, 
       'address': address,
       'position': position,
       'gender': gender,
-      'dateOfBirth': birthDate?.toIso8601String(), // Note: using backend naming
-      'nationalID': nationalId, // Note: using backend naming
+      'dateOfBirth': birthDate?.toIso8601String(), 
+      'nationalID': nationalId, 
       'hireDate': hireDate?.toIso8601String(),
       'profileImagePath': profileImagePath,
       'active': active,

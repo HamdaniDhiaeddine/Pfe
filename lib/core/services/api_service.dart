@@ -26,14 +26,14 @@ class ApiService {
       },
     ));
 
-    // Add auth interceptor first
+    // auth interceptor 
     _dio.interceptors.add(AuthInterceptor(_dio, _storage));
 
-    // Add logging interceptor
+    // logging interceptor
     _dio.interceptors.add(LogInterceptor(
       requestBody: true,
       responseBody: true,
-      requestHeader: true, // Add this to see headers
+      requestHeader: true, 
       logPrint: (obj) {
         debugPrint('DIO LOG: ${obj.toString()}');
       },
@@ -42,13 +42,13 @@ class ApiService {
 
   Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) async {
     try {
-      debugPrint('Making GET request to: $path'); // Debug log
+      debugPrint('Making GET request to: $path'); 
       final response = await _dio.get(
         path,
         queryParameters: queryParameters,
       );
       
-      debugPrint('Response status: ${response.statusCode}'); // Debug log
+      debugPrint('Response status: ${response.statusCode}'); 
       
       if (response.statusCode == 403) {
         throw 'Authentication required. Please login again.';
@@ -64,8 +64,8 @@ class ApiService {
 
       return response;
     } on DioException catch (e) {
-      debugPrint('DIO Error: ${e.message}'); // Debug log
-      debugPrint('DIO Error Response: ${e.response?.data}'); // Debug log
+      debugPrint('DIO Error: ${e.message}'); 
+      debugPrint('DIO Error Response: ${e.response?.data}'); 
       
       if (e.response?.statusCode == 403) {
         throw 'Authentication required. Please login again.';
@@ -81,12 +81,12 @@ class ApiService {
 
   Future<Response> post(String path, dynamic data) async {
     try {
-      debugPrint('Making POST request to $path with data: $data'); // Debug log
+      debugPrint('Making POST request to $path with data: $data'); 
       
       final response = await _dio.post(path, data: data);
       
-      debugPrint('Response status: ${response.statusCode}'); // Debug log
-      debugPrint('Response data: ${response.data}'); // Debug log
+      debugPrint('Response status: ${response.statusCode}'); 
+      debugPrint('Response data: ${response.data}'); 
       
       if (response.statusCode == 403) {
         throw 'Authentication required. Please login again.';
@@ -102,8 +102,8 @@ class ApiService {
       
       return response;
     } on DioException catch (e) {
-      debugPrint('DioException: ${e.toString()}'); // Debug log
-      debugPrint('Response data: ${e.response?.data}'); // Debug log
+      debugPrint('DioException: ${e.toString()}'); 
+      debugPrint('Response data: ${e.response?.data}'); 
       
       if (e.response?.statusCode == 403) {
         throw 'Authentication required. Please login again.';
