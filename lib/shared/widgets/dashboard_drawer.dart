@@ -69,6 +69,12 @@ class DashboardDrawer extends StatelessWidget {
                   title: 'Leave Requests',
                   onTap: () => context.go('/dashboard/leave-requests'),
                 ),
+                _buildDrawerItem(
+  context,
+  icon: Icons.person,
+  title: 'My Profile',
+  onTap: () => context.go('/profile'),
+),
                 if (user!.roles.contains('ROLE_ADMIN') || 
                     user!.roles.contains('ROLE_HR') ?? false)
                   _buildDrawerItem(

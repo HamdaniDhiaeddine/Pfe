@@ -1,20 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import '../../../core/constants/constants.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../data/models/user.dart';
-import 'package:intl/intl.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _imageLoadError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Refresh user data when screen opens
+    Future.microtask(
+      () => context.read<AuthProvider>().loadUser(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, auth, child) {
+        debugPrint('Building ProfileScreen with user: ${auth.user?.username}');
+
+        if (auth.loading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
         final user = auth.user;
         if (user == null) {
-          return const Scaffold(
-            body: Center(child: Text('User not found')),
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Profile'),
+            ),
+            body: const Center(
+              child: Text('User not found. Please login again.'),
+            ),
           );
         }
 
@@ -29,7 +59,14 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
           body: RefreshIndicator(
-            onRefresh: () => auth.loadUser(),
+            onRefresh: () async {
+              await auth.loadUser();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Profile updated')),
+                );
+              }
+            },
             child: ListView(
               padding: const EdgeInsets.all(16.0),
               children: [
@@ -39,7 +76,16 @@ class ProfileScreen extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 50,
+                        backgroundColor: Colors.grey.shade200,
                         backgroundImage: _getProfileImage(user.profileImagePath),
+                        onBackgroundImageError: (exception, stackTrace) {
+                          debugPrint('Error loading profile image: $exception');
+                          if (mounted) {
+                            setState(() {
+                              _imageLoadError = true;
+                            });
+                          }
+                        },
                       ),
                       Positioned(
                         right: 0,
@@ -47,11 +93,11 @@ class ProfileScreen extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: user.active ? Colors.green : Colors.red,
+                            color: user.enabled ? Colors.green : Colors.red,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            user.active ? Icons.check : Icons.close,
+                            user.enabled ? Icons.check : Icons.close,
                             size: 16,
                             color: Colors.white,
                           ),
@@ -61,7 +107,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // User Name and Role
                 Center(
                   child: Column(
@@ -69,15 +115,15 @@ class ProfileScreen extends StatelessWidget {
                       Text(
                         user.fullName,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         user.position ?? 'No Position',
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.grey,
-                        ),
+                              color: Colors.grey,
+                            ),
                       ),
                       const SizedBox(height: 4),
                       Wrap(
@@ -85,7 +131,7 @@ class ProfileScreen extends StatelessWidget {
                         children: user.roles.map((role) {
                           return Chip(
                             label: Text(role.replaceAll('ROLE_', '')),
-                            backgroundColor: _getRoleColor(role, context),
+                            backgroundColor: _getRoleColor(role),
                           );
                         }).toList(),
                       ),
@@ -146,8 +192,8 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     _buildInfoRow(
                       'Status',
-                      user.active ? 'Active' : 'Inactive',
-                      valueColor: user.active ? Colors.green : Colors.red,
+                      user.enabled ? 'Active' : 'Inactive',
+                      valueColor: user.enabled ? Colors.green : Colors.red,
                     ),
                     _buildInfoRow(
                       'Leave Balance',
@@ -169,12 +215,14 @@ class ProfileScreen extends StatelessWidget {
                   onPressed: () => _handleLogout(context, auth),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     minimumSize: const Size(double.infinity, 48),
                   ),
                   icon: const Icon(Icons.logout),
                   label: const Text('Logout'),
                 ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -184,13 +232,16 @@ class ProfileScreen extends StatelessWidget {
   }
 
   ImageProvider _getProfileImage(String? profileImagePath) {
-    if (profileImagePath != null && profileImagePath.isNotEmpty) {
-      return NetworkImage(profileImagePath);
+    if (_imageLoadError || profileImagePath == null || profileImagePath.isEmpty) {
+      return const AssetImage('assets/img/anonyme.jpg');
     }
-    return const AssetImage('assets/images/default_avatar.png');
+    final fullImageUrl = profileImagePath.startsWith('http')
+        ? profileImagePath
+        : '${ApiConstants.baseUrl}/uploads/profile/$profileImagePath';
+    return NetworkImage(fullImageUrl);
   }
 
-  Color _getRoleColor(String role, BuildContext context) {
+  Color _getRoleColor(String role) {
     switch (role.replaceAll('ROLE_', '')) {
       case 'SUPERADMIN':
         return Colors.red.withOpacity(0.2);
@@ -201,34 +252,7 @@ class ProfileScreen extends StatelessWidget {
       case 'RH':
         return Colors.purple.withOpacity(0.2);
       default:
-        return Theme.of(context).primaryColor.withOpacity(0.1);
-    }
-  }
-
-  Future<void> _handleLogout(BuildContext context, AuthProvider auth) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed ?? false) {
-      await auth.logout(context);
+        return Colors.grey.withOpacity(0.2);
     }
   }
 
@@ -295,8 +319,34 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _handleLogout(BuildContext context, AuthProvider auth) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed ?? false) {
+      await auth.logout(context);
+    }
+  }
+
   void _showEditProfileDialog(BuildContext context, User user) {
-    // TODO: Implement profile editing
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

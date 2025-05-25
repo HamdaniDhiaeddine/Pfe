@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../data/models/contract.dart';
+import '../providers/contract_provider.dart';
 
 class ContractsScreen extends StatefulWidget {
   const ContractsScreen({super.key});
@@ -16,10 +19,14 @@ class _ContractsScreenState extends State<ContractsScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    Future.microtask(() =>
+        Provider.of<ContractProvider>(context, listen: false).loadContracts());
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<ContractProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Contracts'),
@@ -35,35 +42,43 @@ class _ContractsScreenState extends State<ContractsScreen>
         onPressed: () => _showAddContractDialog(context),
         child: const Icon(Icons.add),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search contracts...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onChanged: (value) {
-                // TODO: Implement search
-              },
-            ),
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
+      body: provider.loading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
               children: [
-                _ActiveContractsList(),
-                _ArchivedContractsList(),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search contracts...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      // Optional: implement search logic here
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _ContractsList(
+                        contracts: provider.activeContracts,
+                        isArchived: false,
+                      ),
+                      _ContractsList(
+                        contracts: provider.archivedContracts,
+                        isArchived: true,
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -116,7 +131,7 @@ class _ContractsScreenState extends State<ContractsScreen>
           ),
           ElevatedButton(
             onPressed: () {
-              // TODO: Implement contract creation
+              // TODO: Add form handling and call createContract()
               Navigator.pop(context);
             },
             child: const Text('Create'),
@@ -134,64 +149,74 @@ class _ContractsScreenState extends State<ContractsScreen>
   }
 }
 
-class _ActiveContractsList extends StatelessWidget {
+class _ContractsList extends StatelessWidget {
+  final List<Contract> contracts;
+  final bool isArchived;
+
+  const _ContractsList({
+    required this.contracts,
+    required this.isArchived,
+  });
+
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<ContractProvider>(context, listen: false);
+
+    if (contracts.isEmpty) {
+      return const Center(child: Text('No contracts found.'));
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(8),
+      itemCount: contracts.length,
       itemBuilder: (context, index) {
+        final contract = contracts[index];
+
         return Card(
           child: ListTile(
-            title: const Text('Contract Type'),
+            title: Text(contract.contractType),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Start Date: 2025-01-15'),
-                const Text('End Date: 2026-01-14'),
+                Text('Start Date: ${contract.startDate.toLocal().toIso8601String().split('T').first}'),
+                Text('End Date: ${contract.endDate.toLocal().toIso8601String().split('T').first}'),
               ],
             ),
-            trailing: PopupMenuButton(
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'view',
-                  child: Text('View Details'),
-                ),
-                const PopupMenuItem(
-                  value: 'download',
-                  child: Text('Download PDF'),
-                ),
-                const PopupMenuItem(
-                  value: 'archive',
-                  child: Text('Archive'),
-                ),
-              ],
-              onSelected: (value) {
-                // TODO: Implement actions
-              },
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _ArchivedContractsList extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(8),
-      itemBuilder: (context, index) {
-        return Card(
-          child: ListTile(
-            title: const Text('Archived Contract'),
-            subtitle: const Text('Archived on: 2025-03-15'),
-            trailing: IconButton(
-              icon: const Icon(Icons.restore),
-              onPressed: () {
-                // TODO: Implement restore
-              },
-            ),
+            trailing: isArchived
+                ? IconButton(
+                    icon: const Icon(Icons.restore),
+                    onPressed: () {
+                      // TODO: Implement restore functionality
+                    },
+                  )
+                : PopupMenuButton(
+                    onSelected: (value) async {
+                      if (value == 'archive') {
+                        await provider.archiveContract(contract.id);
+                      } else if (value == 'download') {
+                        final url = await provider.downloadContract(contract.id);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Download URL: $url')),
+                        );
+                      } else if (value == 'view') {
+                        // TODO: Implement view details
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'view',
+                        child: Text('View Details'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'download',
+                        child: Text('Download PDF'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'archive',
+                        child: Text('Archive'),
+                      ),
+                    ],
+                  ),
           ),
         );
       },

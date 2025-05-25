@@ -30,12 +30,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           const SizedBox(width: 8),
           IconButton(
-            icon: CircleAvatar(backgroundImage: user?.profileImagePath != null 
-                ? NetworkImage(user!.profileImagePath!)
-                : const AssetImage('assets/img/anonyme.jpg') as ImageProvider,
-            ),
-            onPressed: () => context.go('/profile'),
-          ),
+  icon: CircleAvatar(
+    backgroundImage: user?.profileImagePath != null 
+      ? NetworkImage(user!.profileImagePath!)
+      : const AssetImage('assets/img/anonyme.jpg') as ImageProvider,
+  ),
+  onPressed: () {
+    debugPrint('Navigating to profile...');
+    if (mounted) {
+      context.go('/profile'); // Use go instead of pushNamed
+    }
+  },
+),
           const SizedBox(width: 16),
         ],
       ),
